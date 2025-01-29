@@ -9,15 +9,12 @@
       margin: 40px;
       background-color: #f8f8f8;
     }
-
     h1, p {
       margin: 0 0 15px;
     }
-
     .hidden {
       display: none;
     }
-
     .overlay {
       position: fixed; 
       top: 0;
@@ -58,24 +55,20 @@
     const MAX_INTERVAL = 180_000;  // 3 min in ms
     const PAUSE_DURATION = 10;     // 10 seconden
 
-    // HTML-elementen selecteren
     let pauseOverlay = document.getElementById('pauseOverlay');
     let countdownSpan = document.getElementById('countdown');
     let bellSound = document.getElementById('bellSound');
 
-    // Functie voor random interval
     function getRandomInterval(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // Hier regelen we de notificatie-permissies
+    // Vragen om permissie bij het laden
     function requestNotificationPermission() {
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
-          // We mogen al notificaties sturen
-          return;
+          return; // we mogen al notificaties sturen
         } else if (Notification.permission !== 'denied') {
-          // We vragen éénmalig toestemming
           Notification.requestPermission().then(permission => {
             console.log('Notificatie-permissie:', permission);
           });
@@ -85,49 +78,44 @@
       }
     }
 
-    // Functie om een notificatie te sturen (als dat mag)
+    // Notificatie sturen als de toestemming is “granted”
     function sendNotification(titel, body = '') {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(titel, { body: body });
       }
     }
 
-    // Functie die de pauze start
     function startPause() {
-      // Probeer het belgeluid af te spelen
-      // (mogelijk pas hoorbaar na eerste user interaction)
-      bellSound.currentTime = 0; // Terug naar het begin van het audiobestand
+      // Belgeluid afspelen
+      bellSound.currentTime = 0;
       bellSound.play().catch(error => {
         console.warn('Audio kon niet automatisch worden afgespeeld:', error);
       });
 
-      // Stuur een notificatie "Neem 10 seconden pauze!"
+      // Notificatie “Neem 10 seconden pauze!”
       sendNotification('Neem 10 seconden pauze!', 'Random Pauze Tool');
 
-      // Overlay tonen
+      // Overlay zichtbaar
       pauseOverlay.classList.remove('hidden');
 
       let remaining = PAUSE_DURATION;
       countdownSpan.textContent = remaining;
 
-      // Aftellen met setInterval
       let intervalId = setInterval(() => {
         remaining--;
         countdownSpan.textContent = remaining;
-
         if (remaining <= 0) {
           clearInterval(intervalId);
           // Verberg de overlay
           pauseOverlay.classList.add('hidden');
-          // Stuur notificatie "Lees verder!"
+          // Notificatie “Lees verder!”
           sendNotification('Pauze voorbij!', 'Je kunt weer verder!');
-          // Nieuwe pauze inplannen
+          // Plan volgende pauze
           scheduleNextPause();
         }
       }, 1000);
     }
 
-    // Functie die de volgende pauze scheduleert
     function scheduleNextPause() {
       let randomTime = getRandomInterval(MIN_INTERVAL, MAX_INTERVAL);
       setTimeout(() => {
@@ -135,34 +123,19 @@
       }, randomTime);
     }
 
-    // Starten wanneer de pagina is geladen
     window.onload = () => {
-      // Vraag (indien nodig) notificatie-rechten
       requestNotificationPermission();
-      // Plan meteen de eerste (willekeurige) pauze
       scheduleNextPause();
     };
   </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <title>Random Pauze Tool</title>
-  <!-- Jouw bestaande CSS & andere head-elementen -->
-</head>
-<body>
-  <!-- Jouw bestaande HTML en scriptgedeelte -->
 
-  <!-- Toevoegen van het footer-element voor de credits: -->
+  <!-- Footer met credits -->
   <footer>
     <p>
       Bell sound by 
       <a href="https://freesound.org/people/_bliind/sounds/491655/" target="_blank" rel="noopener noreferrer">
         _bliind
-      </a>,
-      used under a Creative Commons license requiring attribution.
+      </a>, used under a Creative Commons license requiring attribution.
     </p>
   </footer>
 </body>
