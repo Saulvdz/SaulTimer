@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Random Pauze Tool</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+      background-color: #f8f8f8;
+    }
+
+    h1, p {
+      margin: 0 0 15px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .overlay {
+      position: fixed; 
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      flex-direction: column;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Random Pauze Tool met Geluid & Notificaties</h1>
+  <p>
+    Deze website zal op onvoorspelbare momenten een 10 seconden pauze inlassen, 
+    met een fijn belgeluid en een notificatie (mits toegestaan).
+  </p>
+
+  <!-- Audio-element voor het belgeluid -->
+  <audio id="bellSound" src="bell.mp3" preload="auto"></audio>
+
+  <!-- Overlay die verschijnt tijdens een pauze -->
+  <div id="pauseOverlay" class="overlay hidden">
+    <p>PAUZE! Doe even helemaal niets…</p>
+    <p>Nog <span id="countdown">10</span> seconden...</p>
+  </div>
+
+  <script>
+    // -- Configuratie ---
+    const MIN_INTERVAL = 60_000;   // 1 min in ms
+    const MAX_INTERVAL = 180_000;  // 3 min in ms
+    const PAUSE_DURATION = 10;     // 10 seconden
+
+    // HTML-elementen selecteren
+    let pauseOverlay = document.getElementById('pauseOverlay');
+    let countdownSpan = document.getElementById('countdown');
+    let bellSound = document.getElementById('bellSound');
+
+    // Functie voor random interval
+    function getRandomInterval(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Hier regelen we de notificatie-permissies
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          // We mogen al notificaties sturen
+          return;
+        } else if (Notification.permission !== 'denied') {
+          // We vragen éénmalig toestemming
+          Notification.requestPermission().then(permission => {
+            console.log('Notificatie-permissie:', permission);
+          });
+        }
+      } else {
+        console.log('Browser ondersteunt geen notificaties.');
+      }
+    }
+
+    // Functie om een notificatie te sturen (als dat mag)
+    function sendNotification(titel, body = '') {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(titel, { body: body });
+      }
+    }
+
+    // Functie die de pauze start
+    function startPause() {
+      // Probeer het belgeluid af te spelen
+      // (mogelijk pas hoorbaar na eerste user interaction)
+      bellSound.currentTime = 0; // Terug naar het begin van het audiobestand
+      bellSound.play().catch(error => {
+        console.warn('Audio kon niet automatisch worden afgespeeld:', error);
+      });
+
+      // Stuur een notificatie "Neem 10 seconden pauze!"
+      sendNotification('Neem 10 seconden pauze!', 'Random Pauze Tool');
+
+      // Overlay tonen
+      pauseOverlay.classList.remove('hidden');
+
+      let remaining = PAUSE_DURATION;
+      countdownSpan.textContent = remaining;
+
+      // Aftellen met setInterval
+      let intervalId = setInterval(() => {
+        remaining--;
+        countdownSpan.textContent = remaining;
+
+        if (remaining <= 0) {
+          clearInterval(intervalId);
+          // Verberg de overlay
+          pauseOverlay.classList.add('hidden');
+          // Stuur notificatie "Lees verder!"
+          sendNotification('Pauze voorbij!', 'Je kunt weer verder!');
+          // Nieuwe pauze inplannen
+          scheduleNextPause();
+        }
+      }, 1000);
+    }
+
+    // Functie die de volgende pauze scheduleert
+    function scheduleNextPause() {
+      let randomTime = getRandomInterval(MIN_INTERVAL, MAX_INTERVAL);
+      setTimeout(() => {
+        startPause();
+      }, randomTime);
+    }
+
+    // Starten wanneer de pagina is geladen
+    window.onload = () => {
+      // Vraag (indien nodig) notificatie-rechten
+      requestNotificationPermission();
+      // Plan meteen de eerste (willekeurige) pauze
+      scheduleNextPause();
+    };
+  </script>
+</body>
+</html>
